@@ -10,7 +10,7 @@ fn main() {
     let args: Vec<String> = env::args().collect();
 
     if args.len() < 3 || args.len() > 4 {
-        println!("Usage: ./gep --<mode> <path>");
+        println!("Usage: ./lock-it --<mode> <path>");
         println!("Modes: enc, dec");
         println!("Optional: --del to delete original file after encryption/decryption");
         return;

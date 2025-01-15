@@ -1,6 +1,6 @@
 [package]
-name = "gep"
-version = "0.1.0"
+name = "lock-it"
+version = "1.0.0"
 edition = "2021"
 
 [dependencies]
@@ -9,3 +9,12 @@ hex = "0.4.3"
 rand = "0.8.5"
 rpassword = "7.3.1"
 rust-argon2 = "2.1.0"
+
+[profile.release]
+opt-level = "z"
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = "symbols"
+# overflow-checks = false
+debug = false

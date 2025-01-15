@@ -1,11 +1,12 @@
 
-# GoodEnoughPrivacy: AES-256-GCM Encryption/Decryption Tool
+# Lock-It
+## AES-256-GCM Encryption/Decryption Tool
 
-This project is a file encryption and decryption tool that uses the AES-256 algorithm in GCM mode with Argon2 key derivation. It ensures secure and efficient file handling by encrypting both the content and metadata (filename and extension). This project is an improved version of my [former encryption tool](https://github.com/Slyvred/aes-256-cbc/), which used AES-256 in CBC mode.
+Lock-It is a file encryption and decryption tool that uses the AES-256 algorithm in GCM mode with Argon2 key derivation. It ensures secure and efficient file handling by encrypting both the content and metadata (filename and extension). This project is an improved version of my [former encryption tool](https://github.com/Slyvred/aes-256-cbc/), which used AES-256 in CBC mode. The usecase for this tool is to provide a simple and secure way to encrypt files with a password, ensuring confidentiality and integrity like with P
 
 ## Features
 
-- **AES-256-GCM Encryption**: Protects your files with industry-standard AES-256 in GCM mode for confidentiality and integrity.
+- **AES-256-GCM Encryption**: Protects your files with AES-256 in GCM mode for confidentiality and integrity.
 - **Metadata Security**: Encrypts filenames and extensions to prevent any information leakage.
 - **Large File Support**: Processes files in 8 KB chunks, making it memory-efficient and scalable for files of any size.
 - **Password-Based Security**: Uses Argon2id for strong, resistant-to-attack key derivation from your password.
@@ -27,7 +28,7 @@ This project is a file encryption and decryption tool that uses the AES-256 algo
 To install the tool, use the following command:
 
 ```sh
-cargo install --git https://github.com/Slyvred/good-enough-privacy.git
+cargo install --git https://github.com/Slyvred/lock-it.git
 ```
 
 ## Usage
