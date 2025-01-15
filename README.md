@@ -77,7 +77,7 @@ This tool relies on the following Rust crates:
 ## Security Considerations
 
 - **Password Strength**: Use a strong, unique password to maximize security.
-- **Nonce Reuse**: The tool ensures unique nonces for every encryption operation (by storing them into a hashet), avoiding cryptographic vulnerabilities.
+- **Nonce Reuse**: Since there's only one nonce for the file content, the maximum file size is limited to 64 GB.
 
 ## License
 
