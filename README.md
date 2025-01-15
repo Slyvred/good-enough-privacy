@@ -17,12 +17,11 @@ Locked-In (pun intended) is a file encryption and decryption tool that uses the 
 
 1. A **256-bit key** is derived from the user-provided password using **Argon2id**, with a unique salt to ensure security.
 2. The **filename and extension** are encrypted separately using a unique key and nonce.
-3. File content is encrypted in **8 KB chunks**
+3. File content is encrypted in **8 KB chunks**, with each chunk using a distinct nonce to prevent reuse.
 4. The file header contains essential metadata for decryption:
    - `filename_salt` (16 bytes): Salt for deriving the filename key.
    - `data_salt` (16 bytes): Salt for deriving the file content key.
    - `filename_nonce` (12 bytes): Nonce for decrypting the filename.
-   - `data_nonce` (12 bytes): Nonce for decrypting the file content.
 5. During decryption, the header data is used to reconstruct the keys and nonces for restoring the file.
 
 ## Installation
@@ -78,7 +77,7 @@ This tool relies on the following Rust crates:
 ## Security Considerations
 
 - **Password Strength**: Use a strong, unique password to maximize security.
-- **Nonce Reuse**: Since there's only one nonce for the file content, the maximum file size is limited to 64 GB.
+- **Nonce Reuse**: The tool ensures unique nonces for every encryption operation (by storing them into a hashet), avoiding cryptographic vulnerabilities.
 
 ## License
 

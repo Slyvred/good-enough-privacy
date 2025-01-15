@@ -1,6 +1,9 @@
 use crate::helpers;
 use helpers::print_progress_bar;
-use std::io::{BufReader, BufWriter, Read, Seek, Write};
+use std::{
+    collections::HashSet,
+    io::{BufReader, BufWriter, Read, Seek, Write},
+};
 
 use serde::{Deserialize, Serialize};
 
@@ -13,16 +16,16 @@ use argon2::{self, Config};
 use rand::RngCore;
 
 // const STORED_DATA_SIZE: usize = 12; // Size of the chunk nonce
-const HEADER_SIZE: usize = 56; //44; // Size of our encrypted file header
+const HEADER_SIZE: usize = 44; //56 // Size of our encrypted file header
 const ENC_BUFFER_SIZE: usize = 8192; // It's in the name
-const DEC_BUFFER_SIZE: usize = ENC_BUFFER_SIZE + 16; // 8192 + 12 (= StoredData) + 16 (16 = AES-256 block size)
+const DEC_BUFFER_SIZE: usize = ENC_BUFFER_SIZE + 12 + 16; // 8192 + 12 (= chunk nonce) + 16 (16 = AES-256 block size)
 
 #[derive(Serialize, Deserialize)]
 struct Header {
     filename_salt: [u8; 16],
     data_salt: [u8; 16],
     filename_nonce: [u8; 12],
-    data_nonce: [u8; 12],
+    // data_nonce: [u8; 12],
 }
 
 impl Header {
@@ -31,7 +34,7 @@ impl Header {
             filename_salt: [0u8; 16],
             data_salt: [0u8; 16],
             filename_nonce: [0u8; 12],
-            data_nonce: [0u8; 12],
+            // data_nonce: [0u8; 12],
         }
     }
 }
@@ -105,14 +108,6 @@ pub fn encrypt_file(path: &str, password_str: &str, delete: bool) -> Result<(), 
     header.data_salt = gen_salt();
     let key = gen_key_from_password(password_str, &header.data_salt);
 
-    // Nonce used for the actual data
-    header.data_nonce = Aes256Gcm::generate_nonce(&mut OsRng).into();
-    // Ensure that we don't reuse the same nonce
-    while header.data_nonce == header.filename_nonce {
-        println!("\nNonce reuse detected, generating a new one...");
-        header.data_nonce = Aes256Gcm::generate_nonce(&mut OsRng).into();
-    }
-
     // Serializing the header
     let header_bytes = match bincode::serialize(&header) {
         Ok(bytes) => bytes,
@@ -122,15 +117,32 @@ pub fn encrypt_file(path: &str, password_str: &str, delete: bool) -> Result<(), 
     // Writing it to our file
     writer.write_all(&header_bytes).unwrap();
 
+    // Contains all of our nonces
+    let mut nonces_set: HashSet<[u8; 12]> = HashSet::new();
+    nonces_set.insert(header.filename_nonce);
+
     while let Ok(bytes_read) = reader.read(&mut buf) {
         if bytes_read == 0 {
             break;
         }
 
-        let ciphertext = match encrypt(&key.into(), &header.data_nonce, &buf[..bytes_read]) {
+        // Nonce used for the chunk
+        let mut chunk_nonce: [u8; 12] = Aes256Gcm::generate_nonce(&mut OsRng).into();
+
+        // nonces_set.insert() returns false is the value is already present in the HashSet
+        // It means this nonce was already used and absolutely CANNOT be reused
+        // So we generate a new one until the condition is satisfied
+        while !nonces_set.insert(chunk_nonce) {
+            println!("\nNonce reuse detected, generating a new one...");
+            chunk_nonce = Aes256Gcm::generate_nonce(&mut OsRng).into();
+        }
+
+        let ciphertext = match encrypt(&key.into(), &chunk_nonce, &buf[..bytes_read]) {
             Ok(ct) => ct,
             Err(_) => return Err("Chunk encryption failed"),
         };
+
+        writer.write_all(&chunk_nonce).unwrap();
         writer.write_all(&ciphertext).unwrap();
 
         print_progress_bar(
@@ -232,7 +244,11 @@ pub fn decrypt_file(path: &str, password_str: &str, delete: bool) -> Result<(), 
     for _ in 0..num_chunks {
         reader.read_exact(&mut buf).unwrap();
 
-        let plaintext = match decrypt(&key.into(), &header.data_nonce, &buf) {
+        // Extract nonce and ciphertext
+        let chunk_nonce: [u8; 12] = buf[..12].try_into().unwrap();
+        let ciphertext: [u8; DEC_BUFFER_SIZE - 12] = buf[12..].try_into().unwrap();
+
+        let plaintext = match decrypt(&key.into(), &chunk_nonce, &ciphertext) {
             Ok(pt) => pt,
             Err(_) => return Err("Chunk decryption failed"),
         };
@@ -251,7 +267,11 @@ pub fn decrypt_file(path: &str, password_str: &str, delete: bool) -> Result<(), 
         let mut last_buf = vec![0u8; remaining_bytes as usize];
         reader.read_exact(&mut last_buf).unwrap();
 
-        let plaintext = match decrypt(&key.into(), &header.data_nonce, &last_buf) {
+        // Extract the relevant data
+        let last_nonce: [u8; 12] = last_buf[..12].try_into().unwrap();
+        let ciphertext: Vec<u8> = last_buf[12..].into();
+
+        let plaintext = match decrypt(&key.into(), &last_nonce, &ciphertext) {
             Ok(pt) => pt,
             Err(_) => return Err("Last chunk decryption failed"),
         };
