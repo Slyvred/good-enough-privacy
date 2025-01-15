@@ -2,7 +2,7 @@
 # Lock-It
 ## AES-256-GCM Encryption/Decryption Tool
 
-Lock-It is a file encryption and decryption tool that uses the AES-256 algorithm in GCM mode with Argon2 key derivation. It ensures secure and efficient file handling by encrypting both the content and metadata (filename and extension). This project is an improved version of my [former encryption tool](https://github.com/Slyvred/aes-256-cbc/), which used AES-256 in CBC mode. The usecase for this tool is to provide a simple and secure way to encrypt files with a password, ensuring confidentiality and integrity like with P
+Lock-It is a file encryption and decryption tool that uses the AES-256 algorithm in GCM mode with Argon2 key derivation. It ensures secure and efficient file handling by encrypting both the content and metadata (filename and extension). This project is an improved version of my [former encryption tool](https://github.com/Slyvred/aes-256-cbc/), which used AES-256 in CBC mode. The usecase for this tool is to provide a simple and secure way to encrypt files with a password, ensuring confidentiality and integrity, like when storing sensitive data on a cloud storage service (aka someone else's computer).
 
 ## Features
 
