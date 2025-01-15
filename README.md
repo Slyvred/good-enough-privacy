@@ -34,7 +34,7 @@ cargo install --git https://github.com/Slyvred/lock-it.git
 ## Usage
 
 ```sh
-./gep --<mode> <path> [--del]
+./lock-it --<mode> <path> [--del]
 ```
 
 - `--<mode>`: Specify the operation mode:
@@ -48,7 +48,7 @@ cargo install --git https://github.com/Slyvred/lock-it.git
 #### Encrypting a File
 
 ```sh
-./gep --enc example.txt
+./lock-it --enc example.txt
 ```
 
 This command encrypts `example.txt` and creates an encrypted file named `070b5d73320bcb7b5b3ad337f42bf9af`.
@@ -56,7 +56,7 @@ This command encrypts `example.txt` and creates an encrypted file named `070b5d7
 #### Decrypting a File
 
 ```sh
-./gep --dec --del 070b5d73320bcb7b5b3ad337f42bf9af
+./lock-it --dec --del 070b5d73320bcb7b5b3ad337f42bf9af
 ```
 
 This decrypts the file `070b5d73320bcb7b5b3ad337f42bf9af`, restoring the original file `example.txt`. The `--del` flag deletes the encrypted file after decryption.
