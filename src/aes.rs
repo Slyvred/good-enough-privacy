@@ -99,7 +99,7 @@ pub fn encrypt_file(path: &str, password_str: &str, delete: bool) -> Result<(), 
             break;
         }
 
-        let mut chunk_nonce = filename_nonce; //Aes256Gcm::generate_nonce(&mut OsRng);
+        let mut chunk_nonce = Aes256Gcm::generate_nonce(&mut OsRng);
 
         // nonces_set.insert() returns false is the value is already present in the HashSet
         // It means this nonce was already used and absolutely CANNOT be reused
