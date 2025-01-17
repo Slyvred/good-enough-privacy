@@ -4,6 +4,7 @@ use std::{
     collections::HashSet,
     io::{BufReader, BufWriter, Read, Seek, Write},
 };
+use zeroize::Zeroize;
 
 use serde::{Deserialize, Serialize};
 
@@ -49,7 +50,7 @@ fn encrypt(
 }
 
 /// Wrapper function to encrypt a file
-pub fn encrypt_file(path: &str, password_str: &str, delete: bool) -> Result<(), &'static str> {
+pub fn encrypt_file(path: &str, password_str: &mut str, delete: bool) -> Result<(), &'static str> {
     let file = match std::fs::File::open(path) {
         Ok(file) => file,
         Err(_) => return Err("Failed to open file"),
@@ -68,7 +69,7 @@ pub fn encrypt_file(path: &str, password_str: &str, delete: bool) -> Result<(), 
     let mut header = Header::new();
 
     header.filename_salt = gen_salt();
-    let filename_key = gen_key_from_password(password_str, &header.filename_salt);
+    let mut filename_key = gen_key_from_password(password_str, &header.filename_salt);
 
     header.filename_nonce = Aes256Gcm::generate_nonce(&mut OsRng).into();
 
@@ -80,6 +81,9 @@ pub fn encrypt_file(path: &str, password_str: &str, delete: bool) -> Result<(), 
         Ok(ct) => ct,
         Err(_) => return Err("Filename encryption failed"),
     };
+
+    // Make sure we wipe the key from memory
+    filename_key.zeroize();
 
     // Convert encrypted filename to hex string
     let encrypted_filename = hex::encode(encrypted_filename);
@@ -106,7 +110,7 @@ pub fn encrypt_file(path: &str, password_str: &str, delete: bool) -> Result<(), 
     let file_size = std::fs::metadata(path).unwrap().len();
     // Generate a random salt and derive a key from the password
     header.data_salt = gen_salt();
-    let key = gen_key_from_password(password_str, &header.data_salt);
+    let mut key = gen_key_from_password(password_str, &header.data_salt);
 
     // Serializing the header
     let header_bytes = match bincode::serialize(&header) {
@@ -151,6 +155,10 @@ pub fn encrypt_file(path: &str, password_str: &str, delete: bool) -> Result<(), 
         );
     }
 
+    // Wipe key and password from memory
+    key.zeroize();
+    password_str.zeroize();
+
     // Print a newline after the progress bar
     println!();
 
@@ -174,7 +182,7 @@ fn decrypt(
 }
 
 /// Wrapper function to decrypt a file
-pub fn decrypt_file(path: &str, password_str: &str, delete: bool) -> Result<(), &'static str> {
+pub fn decrypt_file(path: &str, password_str: &mut str, delete: bool) -> Result<(), &'static str> {
     let file = match std::fs::File::open(path) {
         Ok(file) => file,
         Err(_) => return Err("Failed to open file"),
@@ -210,7 +218,7 @@ pub fn decrypt_file(path: &str, password_str: &str, delete: bool) -> Result<(), 
         Err(_) => return Err("Failed to deserialize file header"),
     };
 
-    let filename_key = gen_key_from_password(password_str, &header.filename_salt);
+    let mut filename_key = gen_key_from_password(password_str, &header.filename_salt);
 
     let filename = match decrypt(
         &filename_key.into(),
@@ -220,6 +228,9 @@ pub fn decrypt_file(path: &str, password_str: &str, delete: bool) -> Result<(), 
         Ok(pt) => pt,
         Err(_) => return Err("Wrong password"),
     };
+
+    // Wipe filename key from memory
+    filename_key.zeroize();
 
     let filename = String::from_utf8(filename).unwrap();
     let output_path = path.replace(encrypted_filename_str, &filename);
@@ -239,7 +250,7 @@ pub fn decrypt_file(path: &str, password_str: &str, delete: bool) -> Result<(), 
     let remaining_bytes = file_size % DEC_BUFFER_SIZE as u64; // Remaining bytes, that don't fit in a chunk
 
     // Derive the key from the password and the salt
-    let key = gen_key_from_password(password_str, &header.data_salt);
+    let mut key = gen_key_from_password(password_str, &header.data_salt);
 
     for _ in 0..num_chunks {
         reader.read_exact(&mut buf).unwrap();
@@ -278,6 +289,10 @@ pub fn decrypt_file(path: &str, password_str: &str, delete: bool) -> Result<(), 
 
         writer.write_all(&plaintext).unwrap();
     }
+
+    // Wipe key and password from memory
+    key.zeroize();
+    password_str.zeroize();
 
     // Print a newline after the progress bar
     println!();

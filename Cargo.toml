@@ -11,6 +11,7 @@ rand = "0.8.5"
 rpassword = "7.3.1"
 rust-argon2 = "2.1.0"
 serde = {version = "1.0.217", features = ["derive"]}
+zeroize = "1.8.1"
 
 [profile.release]
 opt-level = "z"

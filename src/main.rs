@@ -50,7 +50,7 @@ fn main() {
         return;
     }
 
-    let password_str = get_password("Enter password: ");
+    let mut password_str = get_password("Enter password: ");
 
     match mode as &str {
         "--enc" => {
@@ -60,12 +60,12 @@ fn main() {
                 println!("Passwords do not match !");
                 return;
             }
-            match encrypt_file(&file, &password_str, delete) {
+            match encrypt_file(&file, &mut password_str, delete) {
                 Ok(_) => (),
                 Err(e) => eprintln!("Error: {:?}", e),
             }
         }
-        "--dec" => match decrypt_file(&file, &password_str, delete) {
+        "--dec" => match decrypt_file(&file, &mut password_str, delete) {
             Ok(_) => (),
             Err(e) => eprintln!("Error: {:?}", e),
         },

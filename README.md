@@ -73,6 +73,7 @@ This tool relies on the following Rust crates:
 - `bincode`: To serialize and deserialize the header data into/from bytes.
 - `rust-argon2`: To perform Argon2id key derivation.
 - `rpassword`: For securely capturing passwords from the user.
+- `zeroize`: To securely wipe sensitive data from memory after use.
 
 ## Security Considerations
 
